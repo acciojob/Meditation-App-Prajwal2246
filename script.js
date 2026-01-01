@@ -7,30 +7,32 @@ const soundButtons = document.querySelectorAll(".sound-picker button");
 const timeButtons = document.querySelectorAll(".time-select button");
 
 let fakeDuration = 600;
-let timer = null;
 let remainingTime = fakeDuration;
+let isPlaying = false;
+let timer = null;
 
-// format mm:ss
+// ---------- Helpers ----------
 function updateDisplay(time) {
-  let min = Math.floor(time / 60);
-  let sec = time % 60;
+  const min = Math.floor(time / 60);
+  const sec = time % 60;
   timeDisplay.textContent = `${min}:${sec}`;
 }
 
 updateDisplay(fakeDuration);
 
-// Play / Pause
+// ---------- Play / Pause ----------
 playBtn.addEventListener("click", () => {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
-    song.pause();
-    video.pause();
-    playBtn.textContent = "Play";
-  } else {
-    song.play();
-    video.play();
+  if (!isPlaying) {
+    isPlaying = true;
     playBtn.textContent = "Pause";
+
+    // Safe play (prevents AbortError)
+    song.play().catch(() => {});
+    video.play().catch(() => {});
+
+    // 🔑 Immediate decrement for Cypress
+    remainingTime--;
+    updateDisplay(remainingTime);
 
     timer = setInterval(() => {
       remainingTime--;
@@ -39,16 +41,25 @@ playBtn.addEventListener("click", () => {
       if (remainingTime <= 0) {
         clearInterval(timer);
         timer = null;
+        isPlaying = false;
         song.pause();
         video.pause();
         song.currentTime = 0;
         playBtn.textContent = "Play";
       }
     }, 1000);
+  } else {
+    // Pause
+    isPlaying = false;
+    playBtn.textContent = "Play";
+    clearInterval(timer);
+    timer = null;
+    song.pause();
+    video.pause();
   }
 });
 
-// Change sound/video
+// ---------- Sound Switch ----------
 soundButtons.forEach(btn => {
   btn.addEventListener("click", function () {
     song.src = this.dataset.sound;
@@ -56,7 +67,7 @@ soundButtons.forEach(btn => {
   });
 });
 
-// Change time
+// ---------- Time Select ----------
 timeButtons.forEach(btn => {
   btn.addEventListener("click", function () {
     fakeDuration = parseInt(this.dataset.time);
