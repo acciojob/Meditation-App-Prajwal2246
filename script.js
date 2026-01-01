@@ -10,18 +10,34 @@ const timeButtons = document.querySelectorAll("#time-select button");
 
 let fakeDuration = 600;
 
-playBtn.addEventListener("click",()=>{
-    if(song.paused){
-        song.play();
-        video.play();
-        playBtn.textContent = "Pause"
-    }else{
+// Play / Pause
+playBtn.addEventListener("click", () => {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+    song.pause();
+    video.pause();
+    playBtn.textContent = "Play";
+  } else {
+    song.play();
+    video.play();
+    playBtn.textContent = "Pause";
+
+    timer = setInterval(() => {
+      remainingTime--;
+      updateDisplay(remainingTime);
+
+      if (remainingTime <= 0) {
+        clearInterval(timer);
+        timer = null;
         song.pause();
         video.pause();
-        playBtn.textContent ="Play"
-    }
-})
-
+        song.currentTime = 0;
+        playBtn.textContent = "Play";
+      }
+    }, 1000);
+  }
+});
 /* change sound and video */
 soundButtons.forEach((btn)=>{
     btn.addEventListener("click",function(){
